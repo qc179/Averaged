@@ -98,6 +98,8 @@ while len(val_queue)>0:
 print u'\n----以下为对应id的分组----\n'
 bids_list = deque(bids_list)
 
+wresult = open('result.txt','w')
+
 for gl in group_list:
     bid_group = []
     for gi in gl:
@@ -109,6 +111,10 @@ for gl in group_list:
                 bid_group.append(int(bidque[0]))
                 break
     print bid_group
+    wresult.write(str(bid_group))
+    wresult.write('\n')
+
+wresult.close()
 
 print '*'*75
 anyenter = raw_input('Grouped completed.Press Enter to quit.')
