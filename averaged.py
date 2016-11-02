@@ -6,6 +6,7 @@
 # weibo_bids.xls:col0 is id,col1 is number
 
 import xlrd
+import sys
 from collections import deque
 
 getbids = xlrd.open_workbook('weibo_bids.xls')
@@ -22,19 +23,18 @@ for row in range(bids_sheet1.nrows):
 bids_dict = dict(bids_list)
 print(u'共有', len(bids_dict), u'个id需要分组')
 
-val_list = bids_dict.values()
+val_list = list(bids_dict.values())
 val_list_len = len(val_list)
 
 val_sum = sum(val_list)
 print(u'\n全部id总计和为', val_sum)
 
 print(val_list)
-# val_list.sort()
+val_list.sort(reverse=True)
 val_queue = deque(val_list)
 
 print(u'\n需要均分为几组：')
-spider_num = raw_input()
-spider_num = int(spider_num)
+spider_num = int(input())
 
 avg_target = val_sum / spider_num
 print(u'\n目标均值：', avg_target, '\n')
@@ -117,4 +117,5 @@ for gl in group_list:
 wresult.close()
 
 print('*' * 75)
-anyenter = raw_input('Grouped completed.Press Enter to quit.')
+anyenter = input("Grouped completed.Press Enter to quit.")
+sys.exit()
