@@ -6,9 +6,19 @@ import sys
 import time
 from collections import deque
 
+
+def usetm(input_val):
+    if input_val < 1500:
+        tm = int(input_val / 20)
+    else:
+        tm = int(input_val / 25)
+    return tm
+
+id_val_list = []
+id_tm_list = []
 id_val_xls = xlrd.open_workbook('weibo_bids.xls')
 id_val_sheet1 = id_val_xls.sheets()[0]
-id_val_list = []
+
 for row in range(id_val_sheet1.nrows):
     row0 = str(int(id_val_sheet1.cell(row, 0).value))
     row1 = int(id_val_sheet1.cell(row, 1).value)
@@ -19,13 +29,34 @@ val_list = list(dict(id_val_list).values())
 val_list_len = len(val_list)
 val_list_sum = sum(val_list)
 val_list.sort(reverse=True)
+tm_list = []
 
+for id_val in id_val_list:
+    val_use_tm = usetm(id_val[1])
+    id_tm_list.append((str(id_val[1]), int(val_use_tm)))
+
+for val in val_list:
+    val_tm=usetm(val)
+    tm_list.append(val_tm)
+
+print(tm_list)
+tm_list_len = len(tm_list)
+tm_list_sum = sum(tm_list)
+tm_list.sort(reverse=True)
+
+month_num = 12
+basetime = val_list_len *month_num*1.5
+
+print('basetime=%s tmsum=%s alltm=%s' % (basetime,tm_list_sum,basetime+tm_list_sum))
 print('共有', val_list_len, '个值，合计', val_list_sum)
 spider_num = int(input('把这些值均分为几组，请输入：'))
 avg_target = int(val_list_sum / spider_num)
+avg_tm = int((basetime+tm_list_sum) / spider_num)
 print('分组计划：', val_list_len,
       '个值，分成', spider_num,
-      '组，每组约合', avg_target, '(', val_list_sum, '/', spider_num, ')')
+      '组，每组约合', avg_target, '(', val_list_sum, '/', spider_num, ')',
+      '每组理想时间',avg_tm)
+
 time.sleep(1)
 print('...')
 time.sleep(1)
@@ -70,32 +101,60 @@ while len(val_list_queue) > 0:
     # 把索引逆序就可以在下一轮for中反向对各组循环
     groups_idx.reverse()
 
+tm_groups = []
+for s in range(spider_num):
+    tm_groups.append([])
+
+tm_list_que = deque(tm_list)
+
+groups_idx = [i for i in range(spider_num)]
+
+print(tm_list_que)
+while len(tm_list_que) > 0:
+    for i in groups_idx:
+        if len(tm_list_que) == 0:
+            break
+        group_tm = sum(tm_groups[i]) + int(len(tm_groups[i])*month_num*1.5)
+        print(tm_groups[i])
+        print(group_tm)
+        if group_tm >= avg_tm:
+            continue
+        tm_groups[i].append(tm_list_que.popleft())
+    groups_idx.reverse()
+
+print('>>>>>>')
+for tm_group in tm_groups:
+    group_tm = sum(tm_group) + int(len(tm_group) * month_num * 1.5)
+    print(tm_group)
+    print(group_tm)
+print(tm_list_que)
+
 id_val_list_queue = deque(id_val_list)
 
-with open('result.txt', 'w') as savetxt:
-    savetxt.write('分组的 id ：\n')
-    for group in groups:
-        id_group = []
-        for val in group:
-            while True:
-                id_left = id_val_list_queue.popleft()
-                if val != id_left[1]:
-                    id_val_list_queue.append(id_left)
-                else:
-                    id_group.append(int(id_left[0]))
-                    break
-        id_group = str(id_group)
-        id_group = id_group.replace('[', '##')
-        id_group = id_group.replace(']', '')
-        id_group = id_group.replace(' ', '')
-        savetxt.write(id_group)
-        savetxt.write('\n')
-    savetxt.write('\n未参与分组的 id ：\n')
-    id_group_val0 = str(id_group_val0)
-    id_group_val0 = id_group_val0.replace('[', '##')
-    id_group_val0 = id_group_val0.replace(']', '')
-    id_group_val0 = id_group_val0.replace(' ', '')
-    savetxt.write(id_group_val0)
+# with open('result.txt', 'w') as savetxt:
+#     savetxt.write('分组的 id ：\n')
+#     for group in groups:
+#         id_group = []
+#         for val in group:
+#             while True:
+#                 id_left = id_val_list_queue.popleft()
+#                 if val != id_left[1]:
+#                     id_val_list_queue.append(id_left)
+#                 else:
+#                     id_group.append(int(id_left[0]))
+#                     break
+#         id_group = str(id_group)
+#         id_group = id_group.replace('[', '##')
+#         id_group = id_group.replace(']', '')
+#         id_group = id_group.replace(' ', '')
+#         savetxt.write(id_group)
+#         savetxt.write('\n')
+#     savetxt.write('\n未参与分组的 id ：\n')
+#     id_group_val0 = str(id_group_val0)
+#     id_group_val0 = id_group_val0.replace('[', '##')
+#     id_group_val0 = id_group_val0.replace(']', '')
+#     id_group_val0 = id_group_val0.replace(' ', '')
+#     savetxt.write(id_group_val0)
 
 print('>>>值的分布情况')
 for i in range(spider_num):
@@ -116,14 +175,10 @@ print(groups_cnt, '个值参与分组，合计', groups_sum)
 print('分组结果已经保存到 result.txt\n')
 
 
-def usetm(input_val):
-    if input_val < 1500:
-        tm = int(val / 20)
-    else:
-        tm = int(val / 25)
-    return tm
+
 
 i = 0
+all_val_use_tm = 0
 for group in groups:
     i += 1
     print('group', i)
@@ -134,7 +189,9 @@ for group in groups:
         group_use_tm += val_use_tm
     base_tm = int(len(group) * 12 * 1.5)
     group_use_tm += base_tm
+    all_val_use_tm += group_use_tm
     print('count=%s group_need_time=%s' % (len(group), group_use_tm))
+print('all_val_ues_tm=',all_val_use_tm)
 
 anyenter = input("\n按回车键退出.")
 sys.exit()
